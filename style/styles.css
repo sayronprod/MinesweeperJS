@@ -21,3 +21,8 @@ section {
   margin-right: -50%;
   transform: translate(-50%, -50%);
 }
+
+.canvas {
+  position: relative;
+  z-index: 1;
+}

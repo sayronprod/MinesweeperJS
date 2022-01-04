@@ -1,24 +1,36 @@
+import { Game } from "./game.js";
+
 var canvas = document.getElementById("canvas");
-var context = canvas.getContext("2d");
-var standartTile = document.getElementById("standartTile");
-var tileSize = 25;
-onLoad();
+var game;
+var spriteNames = [
+  "0.png",
+  "1.png",
+  "2.png",
+  "3.png",
+  "4.png",
+  "5.png",
+  "6.png",
+  "7.png",
+  "8.png",
+  "badFlagged.png",
+  "bomb.png",
+  "boom.png",
+  "facingDown.png",
+  "flagged.png",
+];
+var images = [];
+await onLoad();
 
-function onLoad() {
-  setArenaSize(225, 225);
-  let x = 0;
-  let y = 0;
-  for (let i = 0; i < 9; i++) {
-    for (let j = 0; j < 9; j++) {
-      context.drawImage(standartTile, x, y, 25, 25);
-      x += tileSize;
-    }
-    x = 0;
-    y += tileSize;
-  }
+async function onLoad() {
+  await loadImages();
+  game = new Game(canvas, 0, images);
+  game.start();
 }
-
-function setArenaSize(width, height) {
-  canvas.setAttribute("width", width);
-  canvas.setAttribute("height", height);
+async function loadImages() {
+  for (const spriteName of spriteNames) {
+    let img = new Image();
+    img.src = `./resources/${spriteName}`;
+    await img.decode();
+    images.push(img);
+  }
 }
