@@ -25,7 +25,7 @@ await onLoad();
 
 async function onLoad() {
   await loadImages();
-  game = new Game(gameCanvas, statusBarCanvas, 0, images);
+  game = new Game(gameCanvas, statusBarCanvas, 2, images);
   game.start();
 }
 async function loadImages() {

@@ -1,6 +1,10 @@
 import Tile from "./tile.js";
 export class Game {
-  #settings = [{ rows: 9, columns: 9, mines: 10 }];
+  #settings = [
+    { rows: 9, columns: 9, mines: 10 },
+    { rows: 16, columns: 16, mines: 40 },
+    { rows: 30, columns: 30, mines: 99 },
+  ];
   #tiles;
   #lastOpened;
   #onMouseDownHandler = this.#onMouseDown.bind(this);
