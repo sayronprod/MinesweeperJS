@@ -1,44 +1,56 @@
 import Tile from "./tile.js";
 export class Game {
   #settings = [{ rows: 9, columns: 9, mines: 10 }];
-  #tiles = [];
-  #lastOpened = null;
+  #tiles;
+  #lastOpened;
   #onMouseDownHandler = this.#onMouseDown.bind(this);
   #onMouseUpHandler = this.#onMouseUp.bind(this);
   #onMouseMoveHandler = this.#onMouseMove.bind(this);
   #onMouseRightClickHandler = this.#onRightClick.bind(this);
   #onMouseUpDocumentHandler = this.#onMouseUpDocument.bind(this);
-  #canvas;
-  #context;
+  #gameCanvas;
+  #gameContext;
   #level;
   #images;
   #tileSize;
   #openCount;
+  #statusBarCanvas;
+  #statusBarContext;
+  #currentSeconds;
+  #currentMines;
+  #isFirstOpen;
 
-  constructor(canvas, level, images) {
-    this.#canvas = canvas;
-    this.#context = canvas.getContext("2d");
-    this.#context.shadowBlur = 0;
-    this.#context.imageSmoothingEnabled = false;
-    this.#context.mozImageSmoothingEnabled = false;
-    this.#context.webkitImageSmoothingEnabled = false;
-    this.#context.msImageSmoothingEnabled = false;
+  constructor(gameCanvas, statusBarCanvas, level, images) {
+    this.#gameCanvas = gameCanvas;
+    this.#gameContext = gameCanvas.getContext("2d");
+    this.#statusBarCanvas = statusBarCanvas;
+    this.#statusBarContext = statusBarCanvas.getContext("2d");
+    this.#gameContext.shadowBlur = 0;
+    this.#gameContext.imageSmoothingEnabled = false;
+    this.#gameContext.mozImageSmoothingEnabled = false;
+    this.#gameContext.webkitImageSmoothingEnabled = false;
+    this.#gameContext.msImageSmoothingEnabled = false;
     this.#level = level;
     this.#images = images;
     this.#tileSize = 30;
-    this.#openCount = 0;
-
-    this.#addListeners();
   }
 
   #addListeners() {
-    this.#canvas.addEventListener("mousedown", this.#onMouseDownHandler, false);
+    this.#gameCanvas.addEventListener(
+      "mousedown",
+      this.#onMouseDownHandler,
+      false
+    );
 
-    this.#canvas.addEventListener("mouseup", this.#onMouseUpHandler, false);
+    this.#gameCanvas.addEventListener("mouseup", this.#onMouseUpHandler, false);
 
-    this.#canvas.addEventListener("mousemove", this.#onMouseMoveHandler, false);
+    this.#gameCanvas.addEventListener(
+      "mousemove",
+      this.#onMouseMoveHandler,
+      false
+    );
 
-    this.#canvas.addEventListener(
+    this.#gameCanvas.addEventListener(
       "contextmenu",
       this.#onMouseRightClickHandler,
       false
@@ -48,21 +60,25 @@ export class Game {
   }
 
   #removeListeners() {
-    this.#canvas.removeEventListener(
+    this.#gameCanvas.removeEventListener(
       "mousedown",
       this.#onMouseDownHandler,
       false
     );
 
-    this.#canvas.removeEventListener("mouseup", this.#onMouseUpHandler, false);
+    this.#gameCanvas.removeEventListener(
+      "mouseup",
+      this.#onMouseUpHandler,
+      false
+    );
 
-    this.#canvas.removeEventListener(
+    this.#gameCanvas.removeEventListener(
       "mousemove",
       this.#onMouseMoveHandler,
       false
     );
 
-    this.#canvas.removeEventListener(
+    this.#gameCanvas.removeEventListener(
       "contextmenu",
       this.#onMouseRightClickHandler,
       false
@@ -76,23 +92,105 @@ export class Game {
   }
 
   async start() {
+    this.#openCount = 0;
+    this.#currentMines = this.#settings[this.#level].mines;
+    this.#isFirstOpen = true;
+    this.#tiles = [];
+    this.#lastOpened = null;
+    this.#currentSeconds = 0;
+    this.#isFirstOpen = true;
+
+    this.#addListeners();
+
+    this.#drawStatusBar();
     this.#drawBoard();
     this.#createMines();
     this.#createGlobalMap();
   }
 
-  #drawBoard() {
-    this.#setArenaSize(
+  #drawStatusBar() {
+    this.#statusBarCanvas.setAttribute(
+      "width",
+      this.#settings[this.#level].rows * this.#tileSize
+    );
+    this.#statusBarCanvas.setAttribute("height", 50);
+
+    this.#statusBarContext.fillStyle = "silver";
+    this.#statusBarContext.fillRect(
+      0,
+      0,
       this.#settings[this.#level].rows * this.#tileSize,
-      this.#settings[this.#level].columns * this.#tileSize
+      50
     );
 
-    let x = 0;
-    let y = 0;
+    this.#drawMines();
+    this.#drawTime();
+    this.#drawStatusIcon();
+  }
+
+  #drawStatusIcon() {
+    this.#statusBarContext.drawImage(
+      this.#images[14],
+      (this.#settings[this.#level].rows * this.#tileSize) / 2 - 25,
+      1,
+      48,
+      48
+    );
+  }
+
+  #drawTime() {
+    this.#statusBarContext.fillStyle = "black";
+    this.#statusBarContext.fillRect(
+      this.#settings[this.#level].rows * this.#tileSize - 102,
+      2,
+      100,
+      47
+    );
+    this.#statusBarContext.fillStyle = "red";
+    this.#statusBarContext.font = "48px Sans-serif";
+    this.#statusBarContext.fillText(
+      this.#currentSeconds.toString().padStart(3, "0"),
+      this.#settings[this.#level].rows * this.#tileSize - 90,
+      42
+    );
+  }
+
+  #drawMines() {
+    this.#statusBarContext.fillStyle = "black";
+    this.#statusBarContext.fillRect(2, 2, 100, 47);
+
+    this.#statusBarContext.fillStyle = "red";
+    this.#statusBarContext.font = "48px Sans-serif";
+    this.#statusBarContext.fillText(
+      this.#currentMines.toLocaleString("en", {
+        minimumIntegerDigits: 3,
+        minimumFractionDigits: 0,
+        useGrouping: false,
+      }),
+      5,
+      42
+    );
+  }
+
+  #drawBoard() {
+    this.#setArenaSize(
+      this.#settings[this.#level].rows * this.#tileSize + 2,
+      this.#settings[this.#level].columns * this.#tileSize + 2
+    );
+    this.#gameContext.fillStyle = "black";
+    this.#gameContext.fillRect(
+      0,
+      0,
+      this.#settings[this.#level].rows * this.#tileSize + 2,
+      this.#settings[this.#level].columns * this.#tileSize + 2
+    );
+
+    let x = 1;
+    let y = 1;
     for (let i = 0; i < this.#settings[this.#level].rows; i++) {
       this.#tiles.push([]);
       for (let j = 0; j < this.#settings[this.#level].columns; j++) {
-        this.#context.drawImage(
+        this.#gameContext.drawImage(
           this.#images[12],
           x,
           y,
@@ -102,7 +200,7 @@ export class Game {
         this.#tiles[i].push(new Tile(y, x));
         x += this.#tileSize;
       }
-      x = 0;
+      x = 1;
       y += this.#tileSize;
     }
   }
@@ -152,7 +250,7 @@ export class Game {
 
   #onMouseUpDocument(event) {
     if (!this.#isInCanvasRect(event) && this.#lastOpened != null) {
-      this.#closelastOpenedCell();
+      this.#closeLastOpenedCell();
     }
   }
 
@@ -172,7 +270,7 @@ export class Game {
         this.#lastOpened != null &&
         !this.#tiles[this.#lastOpened.x][this.#lastOpened.y].isOpened
       ) {
-        this.#closelastOpenedCell();
+        this.#closeLastOpenedCell();
       }
       if (this.#isCanBePreopen(x, y)) {
         this.#preOpenCell(x, y);
@@ -215,7 +313,7 @@ export class Game {
   }
 
   #drawCell(x, y, image) {
-    this.#context.drawImage(
+    this.#gameContext.drawImage(
       this.#images[image],
       this.#tiles[x][y].x,
       this.#tiles[x][y].y,
@@ -227,14 +325,18 @@ export class Game {
   #flagCell(x, y) {
     this.#tiles[x][y].isFlagged = true;
     this.#drawCell(x, y, 13);
+    this.#currentMines--;
+    this.#drawMines();
   }
 
   #unflagCell(x, y) {
     this.#tiles[x][y].isFlagged = false;
     this.#drawCell(x, y, 12);
+    this.#currentMines++;
+    this.#drawMines();
   }
 
-  #closelastOpenedCell() {
+  #closeLastOpenedCell() {
     this.#drawCell(this.#lastOpened.x, this.#lastOpened.y, 12);
     this.#lastOpened = null;
   }
@@ -254,6 +356,14 @@ export class Game {
   }
 
   #openCell(x, y) {
+    if (this.#isFirstOpen) {
+      this.#isFirstOpen = false;
+      setInterval(() => {
+        this.#currentSeconds++;
+        this.#drawTime();
+      }, 1000);
+    }
+
     if (this.#tiles[x][y].status === 10) {
       this.#tiles[x][y].isOpened = true;
       this.#tiles[x][y].status = 11;
@@ -293,7 +403,6 @@ export class Game {
   #checkWin() {
     let totalCell =
       this.#settings[this.#level].rows * this.#settings[this.#level].columns;
-    console.log(this.#openCount);
     if (this.#openCount === totalCell - this.#settings[this.#level].mines) {
       this.#removeListeners();
       setTimeout(() => alert("You win!"), 0);
@@ -301,8 +410,8 @@ export class Game {
   }
 
   #setArenaSize(width, height) {
-    this.#canvas.setAttribute("width", width);
-    this.#canvas.setAttribute("height", height);
+    this.#gameCanvas.setAttribute("width", width);
+    this.#gameCanvas.setAttribute("height", height);
   }
 
   #getRandomNumber(min, max) {

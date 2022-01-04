@@ -1,6 +1,7 @@
 import { Game } from "./game.js";
 
-var canvas = document.getElementById("canvas");
+var gameCanvas = document.getElementById("gameCanvas");
+var statusBarCanvas = document.getElementById("statusBarCanvas");
 var game;
 var spriteNames = [
   "0.png",
@@ -17,13 +18,14 @@ var spriteNames = [
   "boom.png",
   "facingDown.png",
   "flagged.png",
+  "normal.png",
 ];
 var images = [];
 await onLoad();
 
 async function onLoad() {
   await loadImages();
-  game = new Game(canvas, 0, images);
+  game = new Game(gameCanvas, statusBarCanvas, 0, images);
   game.start();
 }
 async function loadImages() {

@@ -13,16 +13,21 @@ section {
 }
 
 .conteiner {
-  position: relative;
   margin: 0;
   position: absolute;
   top: 50%;
   left: 50%;
-  margin-right: -50%;
   transform: translate(-50%, -50%);
+  display: flex;
+  flex-flow: column wrap;
 }
 
-.canvas {
+.gameCanvas {
+  position: relative;
+  z-index: 1;
+}
+
+.statusBarCanvas {
   position: relative;
   z-index: 1;
 }
